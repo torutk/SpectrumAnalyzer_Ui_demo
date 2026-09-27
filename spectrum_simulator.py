@@ -6,7 +6,7 @@
 * SCPC波（QPSK）
 * SS波
 * CW
-* 時間変動(T.B.
+* 時間変動
 
 """
 from functools import partial
@@ -249,10 +249,13 @@ class SpectrumSimulator:
 
     def cw_signal(self):
         """CW信号を生成する"""
+        gen_ripple = lambda x: np.zeros(x)
+        bandwidth = self.freqs_hz[1] - self.freqs_hz[0]
         signals = None
         for sig in self.cw_signals:
-            cw = generate_cw_signal(
-                self.freqs_hz, sig.center_freq_hz, sig.peak_level_dbm
+            cw = generate_signal(
+                self.freqs_hz, sig.center_freq_hz, bandwidth,
+                sig.peak_level_dbm, 0.1, gen_ripple
             )
             if signals is None:
                 signals = cw
@@ -276,7 +279,20 @@ class SpectrumSimulator:
                        + dbm_to_mw(self.dsss_signal_dbm)
                        + dbm_to_mw(self.cw_signal_dbm))
         self.spectrum_dbm = mw_to_dbm(spectrum_mw)
-        return self.spectrum_dbm
+        return self.fading()
+
+
+    def fading(self):
+        """Fadingをシミュレーションする
+
+        Returns:
+            模擬スペクトラム [dBm]
+        """
+        interval_fading = 3 * np.sin(0.2 * np.pi * self.freqs_hz / 50e6 + self.time * 1e-3)
+        spectrum = self.spectrum_dbm + interval_fading
+        common_fading = 3 * np.sin(self.time * 0.05) + 1 * np.sin(self.time * 0.13)
+        spectrum += common_fading
+        return spectrum
 
 
 def main():

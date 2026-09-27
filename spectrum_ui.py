@@ -6,13 +6,27 @@ from bokeh.models.callbacks import CustomJS
 from bokeh.plotting import figure
 from bokeh.models import CheckboxGroup, ColumnDataSource, HoverTool
 import numpy as np
-import spectrum
+from spectrum_simulator import SpectrumSimulator
 
 t = 0.0
 
 def main():
-    # X軸（周波数）のデータ生成
-    freq = np.linspace(7250e6, 7750e6, 5_000)
+    # スペクトラム模擬器の生成
+    freq = np.linspace(7250e6, 7750e6, 80_000)
+    sim = SpectrumSimulator(freq)
+    sim.add_qpsk(7270e6, 256e3, -55)
+    sim.add_qpsk(7275e6, 512e3, -54)
+    sim.add_qpsk(7278e6, 128e3, -52)
+    sim.add_qpsk(7310e6, 1e6, -60)
+    sim.add_qpsk(7315e6, 2e6, -62)
+    sim.add_qpsk(7320e6, 4e6, -64)
+    sim.add_qpsk(7350e6, 12e6, -63)
+    sim.add_qpsk(7520e6, 24e6, -61)
+    sim.add_dsss(7720e6, 40e6, -75)
+
+    sim.add_cw(7450e6, -50)
+    sim.add_cw(7455e6, -51)
+
     # データソースの定義
     ## スペクトラム現在値
     source = ColumnDataSource(data=dict(
@@ -32,6 +46,7 @@ def main():
         x_axis_label="Frequency [MHz]", y_axis_label="Power [dBm]",
         toolbar_location="above",
     )
+    p.x_range.range_padding = 0.0
     # Y軸の表示範囲を固定
     p.y_range.start = -120
     p.y_range.end = -40
@@ -53,8 +68,7 @@ def main():
     p.add_layout(legend, "right")
 
     def update():
-        global t
-        current = spectrum.generate(freq, t)
+        current = sim.get_spectrum()
         source.data = dict(x=freq / 1e6, y=current)
         min_hold = min_source.data["y"]
         min_source.data = dict(x=freq / 1e6, y=np.minimum(min_hold, current))
@@ -62,7 +76,7 @@ def main():
         max_source.data = dict(x=freq / 1e6, y=np.maximum(max_hold, current))
         peak_idx = np.argmax(current)
         peak_source.data = dict(x=[freq[peak_idx] / 1e6], y=[current[peak_idx]])
-        t += 1
+        sim.time += 1
 
     peak_checkbox = CheckboxGroup(labels=["Peak Marker"], active=[], align="center")
     peak_callback = CustomJS(args=dict(scatter=peak_scatter), code="""
