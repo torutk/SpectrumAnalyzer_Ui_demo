@@ -53,9 +53,11 @@ PS D:\work\SpectrumAnalyzer_Ui_demo> bokeh serve spectrum_ui --show
 
 * spectrum_ui.py  
 Bokehライブラリを利用して無線通信スペクトラムをプロットする
-* spectrum.py  
+* spectrum_simulator.py  
+スペクトラムの模擬生成クラス
+* spectrum.py (deprecated)  
 乱数で無線通信スペクトラムデータを疑似的に生成する
-* spectrum_generator.py  
+* spectrum_generator.py (deprecated)  
 （試行）別なやり方で無線通信スペクトラムデータを疑似的に生成しBokehライブラリを利用してグラフにプロットする。
 上述2つのファイルとは独立したコード。
 
